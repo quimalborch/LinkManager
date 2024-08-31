@@ -166,7 +166,11 @@ export default function EncryptedLinkSaver() {
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog open={isModalOpen} onOpenChange={(open) => {
+        if (isPasswordSet) {
+          setIsModalOpen(open)
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Enter Master Password</DialogTitle>
@@ -299,6 +303,18 @@ export default function EncryptedLinkSaver() {
           <Button onClick={handleLogout} className="w-full">Logout</Button>
         </div>
       )}
+      
+      <footer className="mt-8 text-center text-sm text-gray-500">
+        Developed by{' '}
+        <a 
+          href="https://www.youtube.com" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:underline"
+        >
+          @quimalborch
+        </a>
+      </footer>
     </div>
   )
 }
