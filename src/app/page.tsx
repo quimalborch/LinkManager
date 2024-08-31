@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Trash2, Eye, EyeOff } from 'lucide-react'
 import { useToast } from "@/components/ui/use-toast"
 
 interface EncryptedLink {
   id: number
-  encryptedTitle: string
-  encryptedUrl: string
+  encrypted_title: string
+  encrypted_url: string
 }
 
 export default function EncryptedLinkSaver() {
@@ -94,27 +95,36 @@ export default function EncryptedLinkSaver() {
   }
 
   const handleAddLink = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (newTitle && newLink && masterPassword) {
-      const newId = Date.now()
-      const encryptedTitle = encrypt(newTitle)
-      const encryptedUrl = encrypt(newLink)
-      const updatedLinks = [...links, { id: newId, encryptedTitle, encryptedUrl }]
-      setLinks(updatedLinks)
-      saveLinks(updatedLinks)
-      setNewTitle('')
-      setNewLink('')
-      decryptAllLinks()
+    e.preventDefault();
+    if (newTitle.trim() && newLink.trim() && masterPassword) { // Añadir trim para evitar solo espacios
+      const newId = Date.now();
+      const encrypted_title = encrypt(newTitle);
+      const encrypted_url = encrypt(newLink);
+  
+      // Asegúrate de que el proceso de encriptación no retorna valores vacíos
+      if (!encrypted_title || !encrypted_url) {
+        console.error('Error encrypting title or URL.');
+        return;
+      }
+  
+      const updatedLinks = [...links, { id: newId, encrypted_title, encrypted_url }];
+      setLinks(updatedLinks);
+      saveLinks(updatedLinks);
+      setNewTitle('');
+      setNewLink('');
+      decryptAllLinks();
+    } else {
+      console.error('Title, URL, or master password is missing.');
     }
-  }
+  }  
 
   const decryptAllLinks = () => {
     const decrypted = links.map(link => {
       try {
         return {
           id: link.id,
-          title: decrypt(link.encryptedTitle),
-          url: decrypt(link.encryptedUrl)
+          title: decrypt(link.encrypted_title),
+          url: decrypt(link.encrypted_url)
         }
       } catch {
         return { id: link.id, title: 'Decryption failed', url: 'Decryption failed' }
@@ -241,14 +251,31 @@ export default function EncryptedLinkSaver() {
                       >
                         {visibleLinkId === link.id ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleDeleteLink(link.id)}
-                        aria-label="Delete link"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Delete link"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete the link.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteLink(link.id)}>
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </li>
                 ))}
