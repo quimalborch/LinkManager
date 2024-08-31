@@ -29,17 +29,21 @@ export default function EncryptedLinkSaver() {
   const { toast } = useToast()
 
   useEffect(() => {
-    fetchLinks()
-  }, [])
+    if (isPasswordSet) {
+      fetchLinks()
+    }
+  }, [isPasswordSet])
 
   const fetchLinks = async () => {
     try {
-      const response = await fetch('/api/links')
+      const userId = CryptoJS.SHA256(masterPassword).toString()
+      const response = await fetch(`/api/links?userId=${userId}`)
       if (!response.ok) {
         throw new Error('Failed to fetch links')
       }
       const data = await response.json()
       setLinks(data)
+      decryptLinks(data)
     } catch (error) {
       console.error('Error fetching links:', error)
       toast({
@@ -50,27 +54,56 @@ export default function EncryptedLinkSaver() {
     }
   }
 
-  const saveLinks = async (updatedLinks: EncryptedLink[]) => {
+  const addLink = async (encryptedTitle: string, encryptedUrl: string) => {
     try {
+      const userId = CryptoJS.SHA256(masterPassword).toString()
       const response = await fetch('/api/links', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(updatedLinks),
+        body: JSON.stringify({ userId, encryptedTitle, encryptedUrl }),
       })
       if (!response.ok) {
-        throw new Error('Failed to save links')
+        throw new Error('Failed to add link')
       }
+      const data = await response.json()
+      setLinks([...links, { id: data.id, encrypted_title: encryptedTitle, encrypted_url: encryptedUrl }])
+      decryptLinks([...links, { id: data.id, encrypted_title: encryptedTitle, encrypted_url: encryptedUrl }])
       toast({
         title: "Success",
-        description: "Links saved successfully.",
+        description: "Link added successfully.",
       })
     } catch (error) {
-      console.error('Error saving links:', error)
+      console.error('Error adding link:', error)
       toast({
         title: "Error",
-        description: "Failed to save links to server.",
+        description: "Failed to add link.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const deleteLink = async (id: number) => {
+    try {
+      const userId = CryptoJS.SHA256(masterPassword).toString()
+      const response = await fetch(`/api/links?id=${id}&userId=${userId}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        throw new Error('Failed to delete link')
+      }
+      setLinks(links.filter(link => link.id !== id))
+      setDecryptedLinks(decryptedLinks.filter(link => link.id !== id))
+      toast({
+        title: "Success",
+        description: "Link deleted successfully.",
+      })
+    } catch (error) {
+      console.error('Error deleting link:', error)
+      toast({
+        title: "Error",
+        description: "Failed to delete link.",
         variant: "destructive",
       })
     }
@@ -90,36 +123,22 @@ export default function EncryptedLinkSaver() {
     if (masterPassword) {
       setIsPasswordSet(true)
       setIsModalOpen(false)
-      decryptAllLinks()
     }
   }
 
   const handleAddLink = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newTitle.trim() && newLink.trim() && masterPassword) { // Añadir trim para evitar solo espacios
-      const newId = Date.now();
-      const encrypted_title = encrypt(newTitle);
-      const encrypted_url = encrypt(newLink);
-  
-      // Asegúrate de que el proceso de encriptación no retorna valores vacíos
-      if (!encrypted_title || !encrypted_url) {
-        console.error('Error encrypting title or URL.');
-        return;
-      }
-  
-      const updatedLinks = [...links, { id: newId, encrypted_title, encrypted_url }];
-      setLinks(updatedLinks);
-      saveLinks(updatedLinks);
-      setNewTitle('');
-      setNewLink('');
-      decryptAllLinks();
-    } else {
-      console.error('Title, URL, or master password is missing.');
+    e.preventDefault()
+    if (newTitle && newLink && masterPassword) {
+      const encryptedTitle = encrypt(newTitle)
+      const encryptedUrl = encrypt(newLink)
+      addLink(encryptedTitle, encryptedUrl)
+      setNewTitle('')
+      setNewLink('')
     }
-  }  
+  }
 
-  const decryptAllLinks = () => {
-    const decrypted = links.map(link => {
+  const decryptLinks = (encryptedLinks: EncryptedLink[]) => {
+    const decrypted = encryptedLinks.map(link => {
       try {
         return {
           id: link.id,
@@ -133,13 +152,6 @@ export default function EncryptedLinkSaver() {
     setDecryptedLinks(decrypted)
   }
 
-  const handleDeleteLink = (id: number) => {
-    const updatedLinks = links.filter(link => link.id !== id)
-    setLinks(updatedLinks)
-    saveLinks(updatedLinks)
-    setDecryptedLinks(decryptedLinks.filter(link => link.id !== id))
-  }
-
   const toggleLinkVisibility = (id: number) => {
     setVisibleLinkId(visibleLinkId === id ? null : id)
   }
@@ -147,6 +159,7 @@ export default function EncryptedLinkSaver() {
   const handleLogout = () => {
     setMasterPassword('')
     setIsPasswordSet(false)
+    setLinks([])
     setDecryptedLinks([])
     setIsModalOpen(true)
   }
@@ -270,7 +283,7 @@ export default function EncryptedLinkSaver() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteLink(link.id)}>
+                            <AlertDialogAction onClick={() => deleteLink(link.id)}>
                               Delete
                             </AlertDialogAction>
                           </AlertDialogFooter>
