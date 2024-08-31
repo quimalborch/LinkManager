@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { Trash2, Eye, EyeOff } from 'lucide-react'
+import { Trash2, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useToast } from "@/components/ui/use-toast"
 
 interface EncryptedLink {
@@ -26,6 +26,7 @@ export default function EncryptedLinkSaver() {
   const [decryptedLinks, setDecryptedLinks] = useState<{ id: number; title: string; url: string }[]>([])
   const [isModalOpen, setIsModalOpen] = useState(true)
   const [visibleLinkId, setVisibleLinkId] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export default function EncryptedLinkSaver() {
   }, [isPasswordSet])
 
   const fetchLinks = async () => {
+    setIsLoading(true)
     try {
       const userId = CryptoJS.SHA256(masterPassword).toString()
       const response = await fetch(`/api/links?userId=${userId}`)
@@ -51,6 +53,8 @@ export default function EncryptedLinkSaver() {
         description: "Failed to fetch links from server.",
         variant: "destructive",
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -243,60 +247,68 @@ export default function EncryptedLinkSaver() {
               <CardDescription>Your saved links</CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-4">
-                {decryptedLinks.map((link) => (
-                  <li key={link.id} className="flex items-center justify-between space-x-2">
-                    <div className="flex-grow">
-                      <h3 className="font-medium">{link.title}</h3>
-                      {visibleLinkId === link.id && (
-                        <a 
-                          href={link.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-sm text-blue-600 hover:underline break-all"
-                        >
-                          {link.url}
-                        </a>
-                      )}
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => toggleLinkVisibility(link.id)}
-                        aria-label={visibleLinkId === link.id ? "Hide link" : "Show link"}
-                      >
-                        {visibleLinkId === link.id ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Delete link"
+              {isLoading ? (
+                <div className="flex justify-center items-center h-24">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : decryptedLinks.length === 0 ? (
+                <p className="text-center text-gray-500">No saved links found for this password.</p>
+              ) : (
+                <ul className="space-y-4">
+                  {decryptedLinks.map((link) => (
+                    <li key={link.id} className="flex items-center justify-between space-x-2">
+                      <div className="flex-grow">
+                        <h3 className="font-medium">{link.title}</h3>
+                        {visibleLinkId === link.id && (
+                          <a 
+                            href={link.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-sm text-blue-600 hover:underline break-all"
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the link.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteLink(link.id)}>
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                            {link.url}
+                          </a>
+                        )}
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => toggleLinkVisibility(link.id)}
+                          aria-label={visibleLinkId === link.id ? "Hide link" : "Show link"}
+                        >
+                          {visibleLinkId === link.id ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Delete link"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the link.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteLink(link.id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </CardContent>
           </Card>
 
