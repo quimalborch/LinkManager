@@ -6,7 +6,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "LinkManager",
+  title: "Link Manager - @quimalborch",
   description: "LinkManager is a simple link manager app made by @quimalborch.",
 };
 
