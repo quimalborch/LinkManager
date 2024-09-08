@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { Trash2, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Trash2, Eye, EyeOff, Loader2, Sun, Moon, Laptop } from 'lucide-react'
 import { useToast } from "@/components/ui/use-toast"
+import { useTheme } from "next-themes"
 
 interface EncryptedLink {
   id: number
@@ -28,6 +30,7 @@ export default function EncryptedLinkSaver() {
   const [visibleLinkId, setVisibleLinkId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+  const { setTheme } = useTheme()
 
   useEffect(() => {
     if (isPasswordSet) {
@@ -169,164 +172,192 @@ export default function EncryptedLinkSaver() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
-      <Dialog open={isModalOpen} onOpenChange={(open) => {
-        if (isPasswordSet) {
-          setIsModalOpen(open)
-        }
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Enter Master Password</DialogTitle>
-            <DialogDescription>
-              This password will be used to encrypt and decrypt your links.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSetPassword}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="masterPassword" className="text-right">
-                  Password
-                </Label>
-                <Input
-                  id="masterPassword"
-                  type="password"
-                  value={masterPassword}
-                  onChange={(e) => setMasterPassword(e.target.value)}
-                  className="col-span-3"
-                  required
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit">Set Password</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {isPasswordSet && (
-        <div className="max-w-md mx-auto space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Encrypted Link Saver</CardTitle>
-              <CardDescription>Save your links securely with encryption</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleAddLink} className="space-y-4">
-                <div>
-                  <Label htmlFor="newTitle">Title</Label>
-                  <Input
-                    id="newTitle"
-                    type="text"
-                    placeholder="My Favorite Site"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="newLink">Link</Label>
-                  <Input
-                    id="newLink"
-                    type="url"
-                    placeholder="https://example.com"
-                    value={newLink}
-                    onChange={(e) => setNewLink(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full">Add Encrypted Link</Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Links</CardTitle>
-              <CardDescription>Your saved links</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex justify-center items-center h-24">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
-              ) : decryptedLinks.length === 0 ? (
-                <p className="text-center text-gray-500">No saved links found for this password.</p>
-              ) : (
-                <ul className="space-y-4">
-                  {decryptedLinks.map((link) => (
-                    <li key={link.id} className="flex items-center justify-between space-x-2">
-                      <div className="flex-grow">
-                        <h3 className="font-medium">{link.title}</h3>
-                        {visibleLinkId === link.id && (
-                          <a 
-                            href={link.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-sm text-blue-600 hover:underline break-all"
-                          >
-                            {link.url}
-                          </a>
-                        )}
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => toggleLinkVisibility(link.id)}
-                          aria-label={visibleLinkId === link.id ? "Hide link" : "Show link"}
-                        >
-                          {visibleLinkId === link.id ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label="Delete link"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the link.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteLink(link.id)}>
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-
-          <Button onClick={handleLogout} className="w-full">Logout</Button>
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-end mb-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setTheme("light")}>
+                <Sun className="mr-2 h-4 w-4" />
+                <span>Light</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("dark")}>
+                <Moon className="mr-2 h-4 w-4" />
+                <span>Dark</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("system")}>
+                <Laptop className="mr-2 h-4 w-4" />
+                <span>System</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      )}
-      
-      <footer className="mt-8 text-center text-sm text-gray-500">
-        Developed by{' '}
-        <a 
-          href="https://www.youtube.com" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:underline"
-        >
-          @quimalborch
-        </a>
-      </footer>
+
+        <Dialog open={isModalOpen} onOpenChange={(open) => {
+          if (isPasswordSet) {
+            setIsModalOpen(open)
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Enter Master Password</DialogTitle>
+              <DialogDescription>
+                This password will be used to encrypt and decrypt your links.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSetPassword}>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="masterPassword" className="text-right">
+                    Password
+                  </Label>
+                  <Input
+                    id="masterPassword"
+                    type="password"
+                    value={masterPassword}
+                    onChange={(e) => setMasterPassword(e.target.value)}
+                    className="col-span-3"
+                    required
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit">Set Password</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {isPasswordSet && (
+          <div className="max-w-md mx-auto space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Encrypted Link Saver</CardTitle>
+                <CardDescription>Save your links securely with encryption</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleAddLink} className="space-y-4">
+                  <div>
+                    <Label htmlFor="newTitle">Title</Label>
+                    <Input
+                      id="newTitle"
+                      type="text"
+                      placeholder="My Favorite Site"
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="newLink">Link</Label>
+                    <Input
+                      id="newLink"
+                      type="url"
+                      placeholder="https://example.com"
+                      value={newLink}
+                      onChange={(e) => setNewLink(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full">Add Encrypted Link</Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Links</CardTitle>
+                <CardDescription>Your saved links</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex justify-center items-center h-24">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : decryptedLinks.length === 0 ? (
+                  <p className="text-center text-muted-foreground">No saved links found for this password.</p>
+                ) : (
+                  <ul className="space-y-4">
+                    {decryptedLinks.map((link) => (
+                      <li key={link.id} className="flex items-center justify-between space-x-2">
+                        <div className="flex-grow">
+                          <h3 className="font-medium">{link.title}</h3>
+                          {visibleLinkId === link.id && (
+                            <a 
+                              href={link.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-sm text-blue-600 dark:text-blue-400 hover:underline break-all"
+                            >
+                              {link.url}
+                            </a>
+                          )}
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => toggleLinkVisibility(link.id)}
+                            aria-label={visibleLinkId === link.id ? "Hide link" : "Show link"}
+                          >
+                            {visibleLinkId === link.id ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Delete link"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete the link.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteLink(link.id)}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+
+            <Button onClick={handleLogout} className="w-full">Logout</Button>
+          </div>
+        )}
+        
+        <footer className="mt-8 text-center text-sm text-muted-foreground">
+          Developed by{' '}
+          <a 
+            href="https://www.youtube.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            @quimalborch
+          </a>
+        </footer>
+      </div>
     </div>
   )
 }
