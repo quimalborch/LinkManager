@@ -349,7 +349,7 @@ export default function EncryptedLinkSaver() {
         <footer className="mt-8 text-center text-sm text-muted-foreground">
           Developed by{' '}
           <a 
-            href="https://www.youtube.com" 
+            href="https://www.quimalborch.tech" 
             target="_blank" 
             rel="noopener noreferrer"
             className="text-blue-600 dark:text-blue-400 hover:underline"
